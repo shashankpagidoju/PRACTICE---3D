@@ -86,13 +86,13 @@ public class Ball : MonoBehaviour
             if (Input.GetMouseButton(0))
             {
                 smash = true;
-                rb.velocity = new Vector3(0, -100 * Time.fixedDeltaTime * 7, 0);
+                rb.linearVelocity = new Vector3(0, -100 * Time.fixedDeltaTime * 7, 0);
             }
         }
 
-        if (rb.velocity.y > 5)
+        if (rb.linearVelocity.y > 5)
         {
-            rb.velocity = new Vector3(rb.velocity.x, 5, rb.velocity.z);
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 5, rb.linearVelocity.z);
         }
     }
 
@@ -112,7 +112,7 @@ public class Ball : MonoBehaviour
     {
         if (!smash)
         {
-            rb.velocity = new Vector3(0, 50 * Time.deltaTime * 5, 0);
+            rb.linearVelocity = new Vector3(0, 50 * Time.deltaTime * 5, 0);
         }
         else
         {
@@ -163,8 +163,7 @@ public class Ball : MonoBehaviour
     {
         if (!smash || target.gameObject.tag == "Finish")
         {
-            rb.velocity = new Vector3(0, 50 * Time.deltaTime * 5, 0);
+            rb.linearVelocity = new Vector3(0, 50 * Time.deltaTime * 5, 0);
         }
     }
 }
-```[cite: 20]
