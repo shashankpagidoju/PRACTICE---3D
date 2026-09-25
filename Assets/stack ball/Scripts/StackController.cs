@@ -12,7 +12,8 @@ public class StackController : MonoBehaviour
         if (transform.parent != null)
         {
             transform.parent = null;
-            FindobjectOfType<Ball>().IncreaseBrokenStacks();
+            // Fixed typo (lowercase 'o') and updated to the modern Unity API
+            FindFirstObjectByType<Ball>().IncreaseBrokenStacks();
         }
 
         foreach (StackPartController o in stackPartControls)

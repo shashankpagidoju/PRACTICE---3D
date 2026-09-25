@@ -12,10 +12,12 @@ public enum BallState
 public class Ball : MonoBehaviour
 {
     public Rigidbody rb;
+
     public BallState ballState = BallState.Prepare;
 
     public bool smash = false;
     public bool invincible = false;
+
     public float currentTime = 0f;
 
     void Start()
@@ -28,6 +30,7 @@ public class Ball : MonoBehaviour
 
     void Update()
     {
+        // PLAYING
         if (ballState == BallState.Playing)
         {
             if (Input.GetMouseButtonDown(0))
@@ -36,41 +39,50 @@ public class Ball : MonoBehaviour
             if (Input.GetMouseButtonUp(0))
                 smash = false;
 
+            // Invincibility meter
             if (invincible)
             {
-                currentTime -= Time.deltaTime * .35f;
+                currentTime -= Time.deltaTime * 0.35f;
             }
             else
             {
                 if (smash)
-                    currentTime += Time.deltaTime * .8f;
+                    currentTime += Time.deltaTime * 0.8f;
                 else
-                    currentTime -= Time.deltaTime * .5f;
+                    currentTime -= Time.deltaTime * 0.5f;
             }
 
+            // Become invincible
             if (currentTime >= 1)
             {
                 currentTime = 1;
                 invincible = true;
             }
-            else if (currentTime <= 0)
+
+            // Lose invincibility
+            if (currentTime <= 0)
             {
                 currentTime = 0;
                 invincible = false;
             }
         }
 
+        // PREPARE
         if (ballState == BallState.Prepare)
         {
             if (Input.GetMouseButtonDown(0))
+            {
                 ballState = BallState.Playing;
+            }
         }
 
+        // FINISH
         if (ballState == BallState.Finish)
         {
             if (Input.GetMouseButtonDown(0))
             {
                 LevelSpawner spawner = FindObjectOfType<LevelSpawner>();
+
                 if (spawner != null)
                 {
                     spawner.NextLevel();
@@ -86,18 +98,36 @@ public class Ball : MonoBehaviour
             if (Input.GetMouseButton(0))
             {
                 smash = true;
-                rb.linearVelocity = new Vector3(0, -100 * Time.fixedDeltaTime * 7, 0);
+
+                rb.linearVelocity = new Vector3(
+                    0,
+                    -100 * Time.fixedDeltaTime * 7,
+                    0
+                );
             }
         }
 
+        // Limit upward speed
         if (rb.linearVelocity.y > 5)
         {
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, 5, rb.linearVelocity.z);
+            rb.linearVelocity = new Vector3(
+                rb.linearVelocity.x,
+                5,
+                rb.linearVelocity.z
+            );
         }
     }
 
     public void IncreaseBrokenStacks()
     {
+        // IMPORTANT:
+        // Check if ScoreManager actually exists
+        if (ScoreManager.instance == null)
+        {
+            Debug.LogWarning("ScoreManager.instance is NULL! Add a ScoreManager to the scene.");
+            return;
+        }
+
         if (!invincible)
         {
             ScoreManager.instance.AddScore(1);
@@ -110,60 +140,76 @@ public class Ball : MonoBehaviour
 
     void OnCollisionEnter(Collision target)
     {
+        // Normal bounce
         if (!smash)
         {
-            rb.linearVelocity = new Vector3(0, 50 * Time.deltaTime * 5, 0);
+            rb.linearVelocity = new Vector3(
+                0,
+                50 * Time.deltaTime * 5,
+                0
+            );
         }
         else
         {
-            if (invincible)
+            // Smash collision
+            if (target.gameObject.CompareTag("enemy"))
             {
-                if (target.gameObject.tag == "enemy" || target.gameObject.tag == "plane")
-                {
-                    if (target.transform.parent != null)
-                    {
-                        StackController stackController = target.transform.parent.GetComponent<StackController>();
-                        if (stackController != null)
-                        {
-                            stackController.ShatterAllParts();
-                            IncreaseBrokenStacks();
-                        }
-                    }
-                }
+                BreakStack(target);
             }
-            else
-            {
-                if (target.gameObject.tag == "enemy")
-                {
-                    if (target.transform.parent != null)
-                    {
-                        StackController stackController = target.transform.parent.GetComponent<StackController>();
-                        if (stackController != null)
-                        {
-                            stackController.ShatterAllParts();
-                            IncreaseBrokenStacks();
-                        }
-                    }
-                }
 
-                if (target.gameObject.tag == "plane")
-                {
-                    print("Over");
-                }
+            // Invincible ball can also break plane
+            if (invincible && target.gameObject.CompareTag("plane"))
+            {
+                BreakStack(target);
+            }
+
+            // If not invincible and hit plane
+            if (!invincible && target.gameObject.CompareTag("plane"))
+            {
+                Debug.Log("Over");
+
+                // Add your Game Over code here later
             }
         }
 
-        if (target.gameObject.tag == "Finish" && ballState == BallState.Playing)
+        // Finish
+        if (target.gameObject.CompareTag("Finish") &&
+            ballState == BallState.Playing)
         {
             ballState = BallState.Finish;
         }
     }
 
+    void BreakStack(Collision target)
+    {
+        // Find StackController in parent
+        StackController stackController =
+            target.gameObject.GetComponentInParent<StackController>();
+
+        if (stackController != null)
+        {
+            stackController.ShatterAllParts();
+
+            IncreaseBrokenStacks();
+        }
+        else
+        {
+            Debug.LogWarning(
+                "StackController not found on " +
+                target.gameObject.name
+            );
+        }
+    }
+
     void OnCollisionStay(Collision target)
     {
-        if (!smash || target.gameObject.tag == "Finish")
+        if (!smash || target.gameObject.CompareTag("Finish"))
         {
-            rb.linearVelocity = new Vector3(0, 50 * Time.deltaTime * 5, 0);
+            rb.linearVelocity = new Vector3(
+                0,
+                50 * Time.deltaTime * 5,
+                0
+            );
         }
     }
 }
