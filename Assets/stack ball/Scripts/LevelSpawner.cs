@@ -5,6 +5,8 @@ using UnityEngine.SceneManagement;
 
 public class LevelSpawner : MonoBehaviour
 {
+    public static LevelSpawner instance;
+
     public GameObject[] model;
 
     [HideInInspector]
@@ -14,20 +16,32 @@ public class LevelSpawner : MonoBehaviour
 
     private GameObject temp1, temp2;
 
-    public int level = 1, addOn = 7;
+    public int level = 1;
+    public int totalStacks = 0;
+
+    [Header("Tower Height Settings")]
+    public int baseStackCount = 50;     // Starting rings for Level 1
+    public int extraStacksPerLevel = 5; // Extra rings added per level
 
     float i = 0;
 
-    // Start is called before the first frame update
+    void Awake()
+    {
+        instance = this;
+    }
+
     void Start()
     {
         level = PlayerPrefs.GetInt("Level", 1);
-        if (level > 9)
-            addOn = 0;
 
         ModelSelection();
         float random = Random.value;
-        for (i = 0; i > -level - addOn; i -= 0.5f)
+        totalStacks = 0;
+
+        int totalRingsToSpawn = baseStackCount + ((level - 1) * extraStacksPerLevel);
+        float endY = -(totalRingsToSpawn * 0.5f);
+
+        for (i = 0; i > endY; i -= 0.5f)
         {
             if (level <= 20)
                 temp1 = Instantiate(modelPrefab[Random.Range(0, 2)]);
@@ -44,12 +58,12 @@ public class LevelSpawner : MonoBehaviour
             temp1.transform.position = new Vector3(0, i - 0.01f, 0);
             temp1.transform.eulerAngles = new Vector3(0, i * 8, 0);
 
-            if (Mathf.Abs(i) >= level * .3f && Mathf.Abs(i) <= level * .6f)
+            if (Mathf.Abs(i) >= totalRingsToSpawn * 0.15f && Mathf.Abs(i) <= totalRingsToSpawn * 0.35f)
             {
                 temp1.transform.eulerAngles = new Vector3(0, i * 8, 0);
                 temp1.transform.eulerAngles += Vector3.up * 180;
             }
-            else if (Mathf.Abs(i) >= level * .8f)
+            else if (Mathf.Abs(i) >= totalRingsToSpawn * 0.45f)
             {
                 temp1.transform.eulerAngles = new Vector3(0, i * 8, 0);
 
@@ -57,23 +71,19 @@ public class LevelSpawner : MonoBehaviour
                     temp1.transform.eulerAngles += Vector3.up * 180;
             }
 
-            temp1.transform.parent = FindObjectOfType<Rotator>().transform;
+            temp1.transform.parent = Object.FindFirstObjectByType<Rotator>().transform;
+            totalStacks++;
         }
 
         temp2 = Instantiate(WinPrefab);
         temp2.transform.position = new Vector3(0, i - 0.01f, 0);
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-    }
-
     void ModelSelection()
     {
-        int randomModel = Random.Range(0, 5);
+        int currentPattern = (level - 1) % 5;
 
-        switch (randomModel)
+        switch (currentPattern)
         {
             case 0:
                 for (int j = 0; j < 4; j++)
@@ -104,7 +114,10 @@ public class LevelSpawner : MonoBehaviour
 
     public void NextLevel()
     {
-        PlayerPrefs.SetInt("Level", PlayerPrefs.GetInt("Level") + 1);
-        SceneManager.LoadScene(0);
+        int current = PlayerPrefs.GetInt("Level", 1);
+        PlayerPrefs.SetInt("Level", current + 1);
+        PlayerPrefs.Save();
+
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }

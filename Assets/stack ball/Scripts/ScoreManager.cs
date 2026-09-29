@@ -1,58 +1,57 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
 
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager instance;
-    private Text scoreText;
-    public int score = 10;
+
+    [Header("Score Data")]
+    public int score = 0;
+    public int bestScore = 0;
+
+    [Header("In-Game Score Text")]
+    public TextMeshProUGUI inGameScoreText;
 
     void Awake()
     {
-        scoreText = GameObject.Find("ScoreText").GetComponent<Text>();
-        MakeSingleton();
+        if (instance == null)
+            instance = this;
+        else
+            Destroy(gameObject);
+
+        bestScore = PlayerPrefs.GetInt("BestScore", 0);
     }
 
-    // Start is called before the first frame update
     void Start()
     {
-        AddScore(0);
-    }
-
-    // Update is called once per frame
-    private void Update()
-    {
-        if (scoreText == null)
-        {
-            scoreText = GameObject.Find("ScoreText").GetComponent<Text>();
-            scoreText.text = score.ToString();
-        }
-    }
-
-    void MakeSingleton()
-    {
-        if (instance != null)
-            Destroy(gameObject);
-        else
-        {
-            instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
+        UpdateScoreUI();
     }
 
     public void AddScore(int amount)
     {
         score += amount;
-        if (score > PlayerPrefs.GetInt("HighScore", 0))
-            PlayerPrefs.SetInt("HighScore", score);
 
-        scoreText.text = score.ToString();
+        if (score > bestScore)
+        {
+            bestScore = score;
+            PlayerPrefs.SetInt("BestScore", bestScore);
+            PlayerPrefs.Save();
+        }
+
+        UpdateScoreUI();
     }
 
     public void ResetScore()
     {
         score = 0;
+        UpdateScoreUI();
+    }
+
+    void UpdateScoreUI()
+    {
+        if (inGameScoreText != null)
+        {
+            inGameScoreText.text = score.ToString();
+        }
     }
 }
